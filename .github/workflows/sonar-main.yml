@@ -1,1 +1,23 @@
+   name: Sonar - main branch
 
+   on:
+     push:
+       branches: [main]
+     workflow_dispatch:
+
+   jobs:
+     sonar:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v4
+           with:
+             fetch-depth: 0
+
+         - uses: SonarSource/sonarqube-scan-action@v5
+           env:
+             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+           with:
+             args: >
+               -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+               -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+               -Dsonar.sourceEncoding=UTF-8
