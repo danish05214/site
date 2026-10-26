@@ -11,6 +11,14 @@ export function listRuns(): Promise<SavedRunSummary[]> {
   });
 }
 
+
+export function deleteRun(id: string): Promise<void> {
+  return apiJson<void>(`/api/runs/${id}`, {
+    method: "DELETE",
+    fallbackError: "Could not delete saved run",
+  });
+}
+
 export function getRun(id: string): Promise<SavedRunDetail> {
   return apiJson<SavedRunDetail>(`/api/runs/${id}`, {
     fallbackError: "Could not open run",

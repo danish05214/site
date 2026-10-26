@@ -25,7 +25,7 @@ import type { WorkflowStep } from "../constants/workflow";
 import { fetchMeta } from "../services/meta.service";
 import { streamRun, streamSiteAnalysis } from "../services/pipeline.service";
 import { fetchLiveTrialLandscape } from "../services/liveTrials.service";
-import { createRun, getRun, listRuns } from "../services/runs.service";
+import { createRun, getRun, listRuns, deleteRun } from "../services/runs.service";
 import { useRoute } from "./RouteContext";
 import { countriesFromRegionKeys, countryMatches } from "../utils/region";
 
@@ -105,6 +105,11 @@ function emptyStages(): StagesMap {
 }
  
 export interface PipelineState {
+  // Delete saved run state and action
+  deletingRunId: string | null;
+  deleteError: string | null;
+  deleteMessage: string | null;
+  deleteSavedRun: (id: string) => Promise<void>;
   meta: MetaResponse | null;
   form: TrialForm;
   setForm: (updater: TrialForm | ((f: TrialForm) => TrialForm)) => void;
@@ -246,6 +251,26 @@ export function PipelineProvider({ children }: { children: ReactNode }) {
   const [loadingRuns, setLoadingRuns] = useState(false);
   const [openingRunId, setOpeningRunId] = useState<string | null>(null);
   const [openRunError, setOpenRunError] = useState<string | null>(null);
+
+  // Delete saved run state and action
+  const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
+
+  async function deleteSavedRun(id: string): Promise<void> {
+    setDeletingRunId(id);
+    setDeleteError(null);
+    setDeleteMessage(null);
+    try {
+      await deleteRun(id);
+      setSavedRuns((prev) => prev ? prev.filter((r) => r.id !== id) : prev);
+      setDeleteMessage("Deleted.");
+    } catch (err) {
+      setDeleteError((err as Error).message);
+    } finally {
+      setDeletingRunId(null);
+    }
+  }
   const [cancelSignal, setCancelSignal] = useState(0);
  
   const canSave = !running && !!ranking && ranking.length > 0;
@@ -913,6 +938,11 @@ export function PipelineProvider({ children }: { children: ReactNode }) {
     openSavedRun,
     openingRunId,
     openRunError,
+    // Delete saved run actions and state
+    deleteSavedRun,
+    deletingRunId,
+    deleteError,
+    deleteMessage,
   };
  
   return (

@@ -3,7 +3,7 @@ import { usePipeline } from "../../hooks/usePipeline";
 import type { SavedRunSummary } from "../../types";
 import SavedRunModal from "./SavedRunModal";
 import ErrorBoundary from "../ui/ErrorBoundary";
-import { CloseIcon, EyeIcon, MailIcon, RefreshIcon } from "../ui/Icons";
+import { CloseIcon, EyeIcon, MailIcon, RefreshIcon, TrashIcon } from "../ui/Icons";
 
 function shareMailtoHref(r: SavedRunSummary): string {
   const subject = `Trial site recommendation — ${r.label || r.indication}`;
@@ -33,6 +33,10 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
     canSave,
     openingRunId,
     openRunError,
+      deleteSavedRun,
+      deletingRunId,
+      deleteError,
+      deleteMessage,
   } = usePipeline();
 
   useEffect(() => {
@@ -86,6 +90,14 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
             </p>
           )}
 
+          {/* Delete messages */}
+          {deleteMessage && (
+            <p className="save-message">{deleteMessage}</p>
+          )}
+          {deleteError && (
+            <p className="save-message error">{deleteError}</p>
+          )}
+
           {savedRuns && savedRuns.length === 0 && (
             <p className="empty-note">
               No saved runs yet. Run the pipeline, then use Save run on the
@@ -135,6 +147,24 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
                             <span className="spinner" />
                           ) : (
                             <EyeIcon className="btn-icon" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-link row-icon-link icon-only"
+                          onClick={() => {
+                            if (window.confirm(`Delete saved run \"${r.label ?? r.indication}\"?`)) {
+                              deleteSavedRun(r.id);
+                            }
+                          }}
+                          disabled={deletingRunId === r.id}
+                          data-tooltip={deletingRunId === r.id ? "Deleting..." : "Delete"}
+                          aria-label="Delete"
+                        >
+                          {deletingRunId === r.id ? (
+                            <span className="spinner" />
+                          ) : (
+                            <TrashIcon className="btn-icon" />
                           )}
                         </button>
                       </td>
