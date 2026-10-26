@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePipeline } from "../../hooks/usePipeline";
 import type { SavedRunSummary } from "../../types";
 import SavedRunModal from "./SavedRunModal";
 import ErrorBoundary from "../ui/ErrorBoundary";
-import { deleteRun } from "../../services/runs.service";
-import { CloseIcon, EyeIcon, MailIcon, RefreshIcon, XIcon } from "../ui/Icons";
+import { CloseIcon, EyeIcon, MailIcon, RefreshIcon } from "../ui/Icons";
 
 function shareMailtoHref(r: SavedRunSummary): string {
   const subject = `Trial site recommendation — ${r.label || r.indication}`;
@@ -23,10 +22,6 @@ function shareMailtoHref(r: SavedRunSummary): string {
 }
 
 export default function HistoryModal({ onClose }: { onClose: () => void }) {
-  const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string>("");
-  const [deleteSuccess, setDeleteSuccess] = useState<string>("");
-
   const {
     savedRuns,
     loadingRuns,
@@ -44,26 +39,7 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
     if (savedRuns === null && !loadingRuns) {
       loadSavedRuns();
     }
-  }, [savedRuns, loadingRuns, loadSavedRuns]);
-
-  const handleDelete = async (run: SavedRunSummary) => {
-    const name = run.label || run.indication;
-    if (!window.confirm(`Delete saved run "${name}"? This cannot be undone.`)) {
-      return;
-    }
-    setDeleteError("");
-    setDeleteSuccess("");
-    setDeletingRunId(run.id);
-    try {
-      await deleteRun(run.id);
-      await loadSavedRuns();
-      setDeleteSuccess("Run deleted.");
-    } catch (err: any) {
-      setDeleteError(err.message || "Failed to delete run.");
-    } finally {
-      setDeletingRunId(null);
-    }
-  };
+  }, []);
 
   return (
     <>
@@ -105,13 +81,9 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
             <p className="save-message error">{saveMessage}</p>
           )}
           {openRunError && (
-            <p className="save-message error">Couldn't open that run: {openRunError}</p>
-          )}
-          {deleteError && (
-            <p className="save-message error">{deleteError}</p>
-          )}
-          {deleteSuccess && (
-            <p className="save-message">{deleteSuccess}</p>
+            <p className="save-message error">
+              Couldn't open that run: {openRunError}
+            </p>
           )}
 
           {savedRuns && savedRuns.length === 0 && (
@@ -165,20 +137,6 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
                             <EyeIcon className="btn-icon" />
                           )}
                         </button>
-                        <button
-                          type="button"
-                          className="btn-link row-icon-link icon-only"
-                          onClick={() => handleDelete(r)}
-                          disabled={deletingRunId === r.id}
-                          data-tooltip={deletingRunId === r.id ? "Deleting..." : "Delete"}
-                          aria-label="Delete"
-                        >
-                          {deletingRunId === r.id ? (
-                            <span className="spinner" />
-                          ) : (
-                            <XIcon className="btn-icon" />
-                          )}
-                        </button>
                       </td>
                       <td>
                         <a
@@ -205,7 +163,8 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
             <div
               className="run-modal-backdrop"
               onClick={() => {
-                reset(); setOpenRun(null);
+                reset();
+                setOpenRun(null);
               }}
             >
               <div
@@ -217,12 +176,17 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
                 <div className="run-modal-head">
                   <div>
                     <h2>Couldn't show this run</h2>
-                    <p className="muted">Something went wrong rendering its details.</p>
+                    <p className="muted">
+                      Something went wrong rendering its details.
+                    </p>
                   </div>
                   <button
                     type="button"
                     className="icon-close-btn"
-                    onClick={() => { reset(); setOpenRun(null); }}
+                    onClick={() => {
+                      reset();
+                      setOpenRun(null);
+                    }}
                     data-tooltip="Close"
                     aria-label="Close"
                   >
